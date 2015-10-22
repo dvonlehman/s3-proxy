@@ -1,5 +1,5 @@
 {
-  "name": "4front-s3-adapter",
+  "name": "4front-s3-proxy",
   "version": "1.0.0",
   "description": "4front plugin to proxy read calls to S3",
   "main": "index.js",
@@ -20,17 +20,13 @@
     "lambda"
   ],
   "author": "David Von Lehman (https://github.com/dvonlehman)",
-  "licenses": [
-    {
-      "type": "Apache-2.0",
-      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
-    }
-  ],
+  "license": "Apache-2.0",
   "homepage": "https://github.com/4front/lambda-invoker",
   "dependencies": {
     "async": "^1.4.0",
     "aws-sdk": "^2.1.47",
     "body-parser": "^1.14.1",
+    "csvtojson": "^0.4.3",
     "debug": "^2.2.0",
     "https-proxy-agent": "^1.0.0",
     "lodash": "^3.10.1",

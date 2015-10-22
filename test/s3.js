@@ -6,20 +6,20 @@ var assert = require('assert');
 var urljoin = require('url-join');
 var express = require('express');
 var supertest = require('supertest');
-var debug = require('debug')('4front:plugins:s3-bridge:test');
+var debug = require('debug')('4front:plugins:s3-proxy:test');
 
 require('simple-errors');
 require('dash-assert');
 
 var BUCKET_NAME = 's3-bridge-bucket';
 
-var S3_PORT = 4658;
+var S3_PORT = 9999;
 var S3_OPTIONS = {
   bucket: BUCKET_NAME,
   region: 'us-west-2',
   accessKeyId: '123',
   secretAccessKey: 'abc',
-  endpoint: 'localhost:' + S3_PORT,
+  endpoint: 'http://localhost:' + S3_PORT,
   sslEnabled: false,
   s3ForcePathStyle: true
 };
@@ -36,6 +36,10 @@ describe('S3Storage', function() {
     this.s3.use(function(req, res, next) {
       debug('request to fake S3 server', req.path, req.method);
       next();
+    });
+
+    this.s3.get('/test', function(req, res, next) {
+      res.send('OK');
     });
 
     this.app.use('/s3-proxy', function(req, res, next) {
@@ -110,6 +114,33 @@ describe('S3Storage', function() {
     supertest(self.app)
       .get('/s3-proxy/some-missing-path.txt')
       .expect(404)
+      .end(done);
+  });
+
+  it('transforms csv to json output', function(done) {
+    var csvFile = 'first,last,age\n' +
+      'Frank,Smith,40\n' +
+      'Sally,Thomas,27\n' +
+      'Bruno,Schmidt,47';
+
+    this.pluginOptions = _.extend({}, S3_OPTIONS, {
+      csvToJson: true
+    });
+
+    var key = 'people.csv';
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('Content-Type', 'text/csv');
+      res.end(csvFile);
+    });
+
+    supertest(self.app)
+      .get(urljoin('/s3-proxy', key))
+      .expect(200)
+      .expect('content-type', 'application/json; charset=utf-8')
+      .expect(function(res) {
+        assert.equal(3, res.body.length);
+        assert.deepEqual(res.body[0], {first: 'Frank', last: 'Smith', age: 40});
+      })
       .end(done);
   });
 });
