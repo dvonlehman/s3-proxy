@@ -32,6 +32,7 @@ describe('S3Storage', function() {
 
     this.app = express();
     this.s3 = express();
+    this.pluginOptions = S3_OPTIONS;
 
     this.s3.use(function(req, res, next) {
       debug('request to fake S3 server', req.path, req.method);
@@ -114,6 +115,20 @@ describe('S3Storage', function() {
     supertest(self.app)
       .get('/s3-proxy/some-missing-path.txt')
       .expect(404)
+      .end(done);
+  });
+
+  it('sets content-type header based on file path', function(done) {
+    var key = urljoin('subfolder', 'data.csv');
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('content-type', 'application/octet-stream');
+      res.end('some text');
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + key)
+      .expect(200)
+      .expect('Content-Type', 'text/csv; charset=utf-8')
       .end(done);
   });
 
