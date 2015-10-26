@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var http = require('http');
+var path = require('path');
 var assert = require('assert');
 var urljoin = require('url-join');
 var express = require('express');
@@ -11,7 +12,7 @@ var debug = require('debug')('4front:plugins:s3-proxy:test');
 require('simple-errors');
 require('dash-assert');
 
-var BUCKET_NAME = 's3-bridge-bucket';
+var BUCKET_NAME = 's3-bucket';
 
 var S3_PORT = 9999;
 var S3_OPTIONS = {
@@ -129,6 +130,20 @@ describe('S3Storage', function() {
       .get('/s3-proxy/' + key)
       .expect(200)
       .expect('Content-Type', 'text/csv; charset=utf-8')
+      .end(done);
+  });
+
+  it('streams an image', function(done) {
+    var key = urljoin('images', 's3.png');
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('content-type', 'image/png');
+      res.sendFile(path.join(__dirname, './fixtures/s3.png'));
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + key)
+      .expect(200)
+      .expect('Content-Type', 'image/png')
       .end(done);
   });
 
