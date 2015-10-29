@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var http = require('http');
+var fs = require('fs');
 var path = require('path');
 var assert = require('assert');
 var urljoin = require('url-join');
@@ -33,7 +34,7 @@ describe('S3Storage', function() {
 
     this.app = express();
     this.s3 = express();
-    this.pluginOptions = S3_OPTIONS;
+    this.pluginOptions = _.extend({}, S3_OPTIONS);
 
     this.s3.use(function(req, res, next) {
       debug('request to fake S3 server', req.path, req.method);
@@ -109,13 +110,30 @@ describe('S3Storage', function() {
   it('returns 404 for missing file', function(done) {
     this.s3.use(function(req, res, next) {
       debug('return 404 error');
-      res.status(404).set('content-type', 'application/xml')
-        .end('<?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchKey</Code></Error>');
+      sendS3Error(res, 404, 'NoSuchKey');
     });
 
     supertest(self.app)
       .get('/s3-proxy/some-missing-path.txt')
       .expect(404)
+      .end(done);
+  });
+
+  it('returns 304 for matching etag', function(done) {
+    var etag = Date.now().toString();
+
+    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+      if (req.headers['if-none-match'] === etag) {
+        return sendS3Error(res, 412, 'PreconditionFailed');
+      }
+
+      res.status(500).end();
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + this.key)
+      .set('if-none-match', etag)
+      .expect(304)
       .end(done);
   });
 
@@ -147,15 +165,69 @@ describe('S3Storage', function() {
       .end(done);
   });
 
+  describe('cacheControl', function() {
+    beforeEach(function() {
+      self = this;
+
+      this.s3CacheControl = null;
+      this.etag = null;
+
+      this.key = urljoin('images', 's3.png');
+      this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+        res.set('content-type', 'image/png');
+        if (self.s3CacheControl) {
+          res.set('cache-control', self.s3CacheControl);
+        }
+        if (self.etag) {
+          res.set('etag', self.etag);
+        }
+
+        // pipe the stream rather than res.sendFile to avoid a
+        // default cache-control header being sent.
+        fs.createReadStream(path.join(__dirname, './fixtures/s3.png')).pipe(res);
+      });
+    });
+
+    it('overrides cache-control', function(done) {
+      this.s3CacheControl = 'nocache';
+      this.pluginOptions.overrideCacheControl = 'max-age=10000';
+
+      supertest(self.app)
+        .get('/s3-proxy/' + this.key)
+        .expect(200)
+        .expect('cache-control', this.pluginOptions.overrideCacheControl)
+        .end(done);
+    });
+
+    it('uses default cache control option if no cache-control from S3', function(done) {
+      this.pluginOptions.defaultCacheControl = 'max-age=1000';
+
+      supertest(self.app)
+        .get('/s3-proxy/' + this.key)
+        .expect(200)
+        .expect('cache-control', this.pluginOptions.defaultCacheControl)
+        .end(done);
+    });
+
+    it('uses S3 cache-control rather than defaultCacheControl option', function(done) {
+      this.s3CacheControl = 'private, max-age=0';
+      this.pluginOptions.defaultCacheControl = 'max-age=1000';
+
+      supertest(self.app)
+        .get('/s3-proxy/' + this.key)
+        .expect(200)
+        .expect('cache-control', this.s3CacheControl)
+        .end(done);
+    });
+  });
+
   it('transforms csv to json output', function(done) {
     var csvFile = 'first,last,age\n' +
       'Frank,Smith,40\n' +
       'Sally,Thomas,27\n' +
       'Bruno,Schmidt,47';
 
-    this.pluginOptions = _.extend({}, S3_OPTIONS, {
-      csvToJson: true
-    });
+    this.pluginOptions.csvToJson = true;
 
     var key = 'people.csv';
     this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
@@ -174,3 +246,8 @@ describe('S3Storage', function() {
       .end(done);
   });
 });
+
+function sendS3Error(res, status, code) {
+  res.status(status).set('content-type', 'application/xml')
+    .end('<?xml version="1.0" encoding="UTF-8"?><Error><Code>' + code + '</Code></Error>');
+}
