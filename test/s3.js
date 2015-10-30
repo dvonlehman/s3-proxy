@@ -137,6 +137,17 @@ describe('S3Storage', function() {
       .end(done);
   });
 
+  it('returns 304 for S3 error NotModified', function(done) {
+    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+      return sendS3Error(res, 304, 'NotModified');
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + this.key)
+      .expect(304)
+      .end(done);
+  });
+
   it('sets content-type header based on file path', function(done) {
     var key = urljoin('subfolder', 'data.csv');
     this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
