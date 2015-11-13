@@ -1,7 +1,7 @@
 {
-  "name": "4front-s3-proxy",
+  "name": "s3-proxy",
   "version": "1.0.0",
-  "description": "4front plugin to proxy read calls to S3",
+  "description": "4front plugin to proxy fetching objects from S3",
   "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec --bail --check-leaks test/",
@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/4front/lambda-invoker"
+    "url": "https://github.com/4front/s3-proxy"
   },
   "keywords": [
     "4front",
@@ -25,7 +25,7 @@
   ],
   "author": "David Von Lehman (https://github.com/dvonlehman)",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/4front/lambda-invoker",
+  "homepage": "https://4front.io/docs/plugins/s3-proxy/",
   "dependencies": {
     "async": "^1.4.0",
     "aws-config": "^1.0.3",
@@ -43,7 +43,7 @@
     "cookie-parser": "^1.4.0",
     "dash-assert": "^1.0.3",
     "eslint": "^1.6.0",
-    "eslint-config-4front": "4front/eslint-config-4front",
+    "eslint-config-4front": "^1.0.1",
     "express": "^4.11.1",
     "istanbul": "^0.3.5",
     "mocha": "^2.3.3",
