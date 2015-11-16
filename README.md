@@ -92,6 +92,9 @@ Now images can be declared in views like so:
 ### Listing objects
 It's also possible to return a JSON listing of all the keys by making a request ending with a trailing slash. For the sample above, issuing a request to `/media/images/` will return: `['logo.png', 'background.jpg']`.
 
+## Use with 4front
+The `s3-proxy` can also be used as a [4front](https://4front.io) plugin. See [https://4front.io/docs/plugins/s3-proxy/](https://4front.io/docs/plugins/s3-proxy/) for details.
+
 ## License
 Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
