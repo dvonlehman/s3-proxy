@@ -13,11 +13,11 @@
     "url": "https://github.com/4front/s3-proxy"
   },
   "keywords": [
-    "4front",
     "express",
     "middleware",
     "aws",
-    "lambda"
+    "s3",
+    "proxy"
   ],
   "files": [
     "index.js",
@@ -25,7 +25,7 @@
   ],
   "author": "David Von Lehman (https://github.com/dvonlehman)",
   "license": "Apache-2.0",
-  "homepage": "https://4front.io/docs/plugins/s3-proxy/",
+  "homepage": "https://github.com/4front/s3-proxy",
   "dependencies": {
     "async": "^1.4.0",
     "aws-config": "^1.0.3",
