@@ -1,7 +1,7 @@
 {
   "name": "s3-proxy",
-  "version": "1.0.2",
-  "description": "Streaming http proxy Express middleware for fetching bjects from S3",
+  "version": "1.0.3",
+  "description": "Streaming http proxy Express middleware for fetching objects from S3",
   "main": "index.js",
   "scripts": {
     "test": "mocha --reporter spec --bail --check-leaks test/",
