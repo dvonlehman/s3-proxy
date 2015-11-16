@@ -1,6 +1,6 @@
 {
   "name": "s3-proxy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Streaming http proxy Express middleware for fetching bjects from S3",
   "main": "index.js",
   "scripts": {
@@ -30,10 +30,7 @@
     "async": "^1.4.0",
     "aws-config": "^1.0.3",
     "aws-sdk": "^2.1.47",
-    "body-parser": "^1.14.1",
-    "csvtojson": "^0.4.3",
     "debug": "^2.2.0",
-    "https-proxy-agent": "^1.0.0",
     "lodash": "^3.10.1",
     "mime": "^1.3.4",
     "simple-errors": "^1.0.1",

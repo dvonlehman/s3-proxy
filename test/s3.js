@@ -8,7 +8,7 @@ var assert = require('assert');
 var urljoin = require('url-join');
 var express = require('express');
 var supertest = require('supertest');
-var debug = require('debug')('4front:plugins:s3-proxy:test');
+var debug = require('debug')('s3-proxy:test');
 
 require('simple-errors');
 require('dash-assert');
@@ -226,31 +226,6 @@ describe('S3Storage', function() {
         .expect('cache-control', this.s3CacheControl)
         .end(done);
     });
-  });
-
-  it('transforms csv to json output', function(done) {
-    var csvFile = 'first,last,age\n' +
-      'Frank,Smith,40\n' +
-      'Sally,Thomas,27\n' +
-      'Bruno,Schmidt,47';
-
-    this.pluginOptions.csvToJson = true;
-
-    var key = 'people.csv';
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
-      res.set('Content-Type', 'text/csv');
-      res.end(csvFile);
-    });
-
-    supertest(self.app)
-      .get(urljoin('/s3-proxy', key))
-      .expect(200)
-      .expect('content-type', 'application/json; charset=utf-8')
-      .expect(function(res) {
-        assert.equal(3, res.body.length);
-        assert.deepEqual(res.body[0], {first: 'Frank', last: 'Smith', age: 40});
-      })
-      .end(done);
   });
 
   describe('lists keys', function() {
