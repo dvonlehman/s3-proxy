@@ -256,6 +256,19 @@ describe('S3Storage', function() {
       })
       .end(done);
   });
+
+  it('strips out path segments starting with a double dash', function(done) {
+    var key = urljoin('images', 'screenshot.png');
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('content-type', 'image/png');
+      res.sendFile(path.join(__dirname, './fixtures/s3.png'));
+    });
+
+    supertest(self.app)
+      .get(urljoin('/s3-proxy', '--5', key))
+      .expect(200)
+      .end(done);
+  });
 });
 
 function sendS3Error(res, status, code) {
