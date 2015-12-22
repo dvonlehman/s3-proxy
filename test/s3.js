@@ -8,7 +8,7 @@ var assert = require('assert');
 var urljoin = require('url-join');
 var express = require('express');
 var supertest = require('supertest');
-var debug = require('debug')('4front:plugins:s3-proxy:test');
+var debug = require('debug')('s3-proxy:test');
 
 require('simple-errors');
 require('dash-assert');
@@ -37,12 +37,8 @@ describe('S3Storage', function() {
     this.pluginOptions = _.extend({}, S3_OPTIONS);
 
     this.s3.use(function(req, res, next) {
-      debug('request to fake S3 server', req.path, req.method);
+      debug('request to fake S3 server', req.url);
       next();
-    });
-
-    this.s3.get('/test', function(req, res, next) {
-      res.send('OK');
     });
 
     this.app.use('/s3-proxy', function(req, res, next) {
@@ -232,29 +228,58 @@ describe('S3Storage', function() {
     });
   });
 
-  it('transforms csv to json output', function(done) {
-    var csvFile = 'first,last,age\n' +
-      'Frank,Smith,40\n' +
-      'Sally,Thomas,27\n' +
-      'Bruno,Schmidt,47';
+  describe('lists keys', function() {
+    beforeEach(function() {
+      self = this;
+      this.s3Keys = ['file1.txt', 'file2.xml', 'file3.json'];
 
-    this.pluginOptions.csvToJson = true;
+      this.s3.get('/' + BUCKET_NAME, function(req, res, next) {
+        var actualKeys;
+        if (req.query.prefix) {
+          actualKeys = [req.query.prefix].concat(_.map(self.s3Keys, function(key) {
+            return urljoin(req.query.prefix, key);
+          }));
+        } else {
+          actualKeys = self.s3Keys;
+        }
 
-    var key = 'people.csv';
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
-      res.set('Content-Type', 'text/csv');
-      res.end(csvFile);
+        var contentsXml = _.map(actualKeys, function(key) {
+          return '<Contents><Key>' + key + '</Key></Contents>';
+        });
+
+        var responseXml = '<?xml version="1.0" encoding="UTF-8"?><ListBucketResult><Name>bucket</Name>' + contentsXml + '</ListBucketResult>';
+        res.set('content-type', 'application/xml')
+          .end(responseXml);
+      });
     });
 
-    supertest(self.app)
-      .get(urljoin('/s3-proxy', key))
-      .expect(200)
-      .expect('content-type', 'application/json; charset=utf-8')
-      .expect(function(res) {
-        assert.equal(3, res.body.length);
-        assert.deepEqual(res.body[0], {first: 'Frank', last: 'Smith', age: 40});
-      })
-      .end(done);
+    it('without prefix', function(done) {
+      supertest(self.app)
+        .get('/s3-proxy/metadata/')
+        .expect(200)
+        .expect('content-type', 'application/json; charset=utf-8')
+        .expect(function(res) {
+          assert.deepEqual(res.body, self.s3Keys);
+        })
+        .end(done);
+    });
+
+    it('with prefix', function(done) {
+      var prefix = 'folder-name';
+
+      this.pluginOptions = _.extend({}, S3_OPTIONS, {
+        prefix: prefix
+      });
+
+      supertest(self.app)
+        .get('/s3-proxy/metadata/')
+        .expect(200)
+        .expect('content-type', 'application/json; charset=utf-8')
+        .expect(function(res) {
+          assert.deepEqual(res.body, self.s3Keys);
+        })
+        .end(done);
+    });
   });
 
   it('strips out path segments starting with a double dash', function(done) {
