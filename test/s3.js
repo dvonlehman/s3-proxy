@@ -294,6 +294,23 @@ describe('S3Storage', function() {
       .expect(200)
       .end(done);
   });
+
+  it('strips off querystring', function(done) {
+    var key = urljoin('images', 'screenshot.png');
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      if (!_.isEmpty(req.query)) {
+        return sendS3Error(res, 400, 'invalidQuerystring');
+      }
+
+      res.set('content-type', 'image/png');
+      res.sendFile(path.join(__dirname, './fixtures/s3.png'));
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + key + '?id=12344')
+      .expect(200)
+      .end(done);
+  });
 });
 
 function sendS3Error(res, status, code) {
