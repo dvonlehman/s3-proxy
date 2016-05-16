@@ -1,6 +1,5 @@
 /* eslint no-console: 0 */
 
-var _ = require('lodash');
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
@@ -9,6 +8,9 @@ var urljoin = require('url-join');
 var express = require('express');
 var supertest = require('supertest');
 var debug = require('debug')('s3-proxy:test');
+var assign = require('lodash.assign');
+var map = require('lodash.map');
+var isEmpty = require('lodash.isempty');
 
 require('simple-errors');
 require('dash-assert');
@@ -34,7 +36,7 @@ describe('S3Storage', function() {
 
     this.app = express();
     this.s3 = express();
-    this.pluginOptions = _.extend({}, S3_OPTIONS);
+    this.pluginOptions = assign({}, S3_OPTIONS);
 
     this.s3.use(function(req, res, next) {
       debug('request to fake S3 server', req.url);
@@ -83,7 +85,7 @@ describe('S3Storage', function() {
     var etag = 'asdfasdfasdf';
     var key = urljoin('subfolder', 'data.json');
 
-    this.pluginOptions = _.extend({}, S3_OPTIONS, {
+    this.pluginOptions = assign({}, S3_OPTIONS, {
       prefix: prefix
     });
 
@@ -238,14 +240,14 @@ describe('S3Storage', function() {
       this.s3.get('/' + BUCKET_NAME, function(req, res, next) {
         var actualKeys;
         if (req.query.prefix) {
-          actualKeys = [req.query.prefix].concat(_.map(self.s3Keys, function(key) {
+          actualKeys = [req.query.prefix].concat(map(self.s3Keys, function(key) {
             return urljoin(req.query.prefix, key);
           }));
         } else {
           actualKeys = self.s3Keys;
         }
 
-        var contentsXml = _.map(actualKeys, function(key) {
+        var contentsXml = map(actualKeys, function(key) {
           return '<Contents><Key>' + key + '</Key></Contents>';
         });
 
@@ -270,7 +272,7 @@ describe('S3Storage', function() {
     it('with prefix', function(done) {
       var prefix = 'folder-name';
 
-      this.pluginOptions = _.extend({}, S3_OPTIONS, {
+      this.pluginOptions = assign({}, S3_OPTIONS, {
         prefix: prefix
       });
 
@@ -301,7 +303,7 @@ describe('S3Storage', function() {
   it('strips off querystring', function(done) {
     var key = urljoin('images', 'screenshot.png');
     this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
-      if (!_.isEmpty(req.query)) {
+      if (!isEmpty(req.query)) {
         return sendS3Error(res, 400, 'invalidQuerystring');
       }
 
