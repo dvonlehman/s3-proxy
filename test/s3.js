@@ -70,12 +70,12 @@ describe('S3Storage', function() {
   it('returns existing json file', function(done) {
     var jsonFile = [
       {
-        'name': 'joe',
-        'age': 45
+        name: 'joe',
+        age: 45
       },
       {
-        'name': 'sam',
-        'age': 61
+        name: 'sam',
+        age: 61
       }
     ];
 
@@ -96,6 +96,7 @@ describe('S3Storage', function() {
       .get(urljoin('/s3-proxy', key))
       .expect(200)
       .expect('content-type', 'application/json; charset=utf-8')
+      .expect('x-4front-s3-proxy-key', prefix + '/' + key)
       .expect('etag', etag)
       .expect(function(res) {
         assert.deepEqual(res.body, jsonFile);
@@ -111,6 +112,7 @@ describe('S3Storage', function() {
 
     supertest(self.app)
       .get('/s3-proxy/some-missing-path.txt')
+      .expect('x-4front-s3-proxy-key', 'some-missing-path.txt')
       .expect(404)
       .end(done);
   });
@@ -247,7 +249,8 @@ describe('S3Storage', function() {
           return '<Contents><Key>' + key + '</Key></Contents>';
         });
 
-        var responseXml = '<?xml version="1.0" encoding="UTF-8"?><ListBucketResult><Name>bucket</Name>' + contentsXml + '</ListBucketResult>';
+        var responseXml = '<?xml version="1.0" encoding="UTF-8"?><ListBucketResult>' +
+          '<Name>bucket</Name>' + contentsXml + '</ListBucketResult>';
         res.set('content-type', 'application/xml')
           .end(responseXml);
       });
