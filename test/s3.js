@@ -316,6 +316,19 @@ describe('S3Storage', function() {
       .expect(200)
       .end(done);
   });
+
+  it('handles folders and files with spaces', function(done) {
+    var key = urljoin(encodeURIComponent('sample pdfs'), encodeURIComponent('pdf sample.pdf'));
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('content-type', 'application/pdf');
+      res.sendFile(path.join(__dirname, './fixtures/pdf sample.pdf'));
+    });
+
+    supertest(self.app)
+      .get('/s3-proxy/' + key)
+      .expect(200)
+      .end(done);
+  });
 });
 
 function sendS3Error(res, status, code) {
