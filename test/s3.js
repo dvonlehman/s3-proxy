@@ -11,6 +11,7 @@ var debug = require('debug')('s3-proxy:test');
 var assign = require('lodash.assign');
 var map = require('lodash.map');
 var isEmpty = require('lodash.isempty');
+var shortid = require('shortid');
 
 require('simple-errors');
 require('dash-assert');
@@ -327,6 +328,31 @@ describe('S3Storage', function() {
     supertest(self.app)
       .get('/s3-proxy/' + key)
       .expect(200)
+      .end(done);
+  });
+
+  it('base64 encodes response', function(done) {
+    var key = urljoin('files', 'hello.pdf');
+    var etag = shortid.generate();
+    var pdfFile = path.join(__dirname, './fixtures/pdf sample.pdf');
+
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+      res.set('content-type', 'application/pdf');
+      res.set('etag', '"' + etag + '"');
+      res.set('Content-Length', 1000);
+      res.sendFile(pdfFile);
+    });
+
+    supertest(this.app)
+      .get('/s3-proxy/' + key)
+      .set('Accept-Encoding', 'base64')
+      .expect(200)
+      .expect('Content-Encoding', 'base64')
+      .expect('ETag', '"' + etag + '_base64"')
+      .expect(function(res) {
+        assert.isUndefined(res.headers['content-length']);
+        assert.equal(res.text, fs.readFileSync(pdfFile).toString('base64'));
+      })
       .end(done);
   });
 });
