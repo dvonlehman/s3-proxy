@@ -45,8 +45,6 @@
   "devDependencies": {
     "cookie-parser": "^1.4.1",
     "dash-assert": "^1.1.0",
-    "eslint": "^2.8.0",
-    "eslint-config-4front": "^1.1.5",
     "express": "^4.13.4",
     "istanbul": "^0.4.3",
     "mocha": "^2.4.5",
