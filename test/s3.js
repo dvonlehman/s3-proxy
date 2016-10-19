@@ -29,7 +29,7 @@ var S3_OPTIONS = {
   s3ForcePathStyle: true
 };
 
-describe('S3Storage', function() {
+describe('s3-proxy', function() {
   var self;
 
   beforeEach(function(done) {
