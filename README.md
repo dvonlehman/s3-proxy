@@ -17,7 +17,8 @@ app.get('/media/*', s3Proxy({
   prefix: 'optional_s3_path_prefix',
   accessKeyId: 'aws_access_key_id',
   secretAccessKey: 'aws_secret_access_key',
-  overrideCacheControl: 'max-age=100000'
+  overrideCacheControl: 'max-age=100000',
+  defaultKey: 'index.html'
 }));
 ~~~
 
@@ -50,6 +51,11 @@ Value of the `Cache-Control` header to use if the metadata from the S3 object do
 __`overrideCacheControl`__
 
 Value of the `Cache-Control` header that is applied to the response even if there there is a different value on the S3 object metadata.
+
+__`defaultKey`__
+
+If a call is made to a url ending in `/`, and this option is present its value is used as the s3 key name. For example, you may wish to allow users to access `/index.html` when calling `/` on a route. 
+
 
 ### HTTP Cache Headers
 
@@ -90,7 +96,10 @@ Now images can be declared in views like so:
 ~~~
 
 ### Listing objects
-It's also possible to return a JSON listing of all the keys by making a request ending with a trailing slash. For the sample above, issuing a request to `/media/images/` will return: `['logo.png', 'background.jpg']`.
+It's also possible to return a JSON listing of all the keys by making a request ending with a trailing slash. For the sample above, issuing a request to `/media/images/` will return: `['logo.png', 'background.jpg']`. This is the default behavior when `defaultKey` is false.
+
+### Default Key 
+If you don't need list objects when making requests ending in a trailing slash, you can instead use a default s3 key by setting the parameter `defaultKey` in options. For example, if `defaultKey` is set to `index.html`, calls to urls like `/media` will return to object `/media/index.html`. 
 
 ## License
 Licensed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
