@@ -29,26 +29,26 @@ var S3_OPTIONS = {
   s3ForcePathStyle: true
 };
 
-describe('s3-proxy', function() {
+describe('s3-proxy', function () {
   var self;
 
-  beforeEach(function(done) {
+  beforeEach(function (done) {
     self = this;
 
     this.app = express();
     this.s3 = express();
     this.pluginOptions = assign({}, S3_OPTIONS);
 
-    this.s3.use(function(req, res, next) {
+    this.s3.use(function (req, res, next) {
       debug('request to fake S3 server', req.url);
       next();
     });
 
-    this.app.use('/s3-proxy', function(req, res, next) {
+    this.app.use('/s3-proxy', function (req, res, next) {
       require('../lib/s3')(self.pluginOptions)(req, res, next);
     });
 
-    this.app.use(function(err, req, res, next) {
+    this.app.use(function (err, req, res, next) {
       if (!err.status) err.status = 500;
 
       if (err.status === 500) {
@@ -58,19 +58,19 @@ describe('s3-proxy', function() {
       res.status(err.status).json(Error.toJson(err));
     });
 
-    this.s3Server = http.createServer(this.s3).listen(S3_PORT, function() {
+    this.s3Server = http.createServer(this.s3).listen(S3_PORT, function () {
       debug('fake s3 server listening');
       done();
     });
   });
 
-  afterEach(function() {
+  afterEach(function () {
     if (this.s3Server) {
       this.s3Server.close();
     }
   });
 
-  it('returns existing json file', function(done) {
+  it('returns existing json file', function (done) {
     var jsonFile = [
       {
         name: 'joe',
@@ -90,7 +90,7 @@ describe('s3-proxy', function() {
       prefix: prefix
     });
 
-    this.s3.get('/' + BUCKET_NAME + '/' + prefix + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + prefix + '/' + key, function (req, res, next) {
       res.set('etag', etag);
       res.json(jsonFile);
     });
@@ -101,14 +101,14 @@ describe('s3-proxy', function() {
       .expect('content-type', 'application/json; charset=utf-8')
       .expect('x-4front-s3-proxy-key', prefix + '/' + key)
       .expect('etag', etag)
-      .expect(function(res) {
+      .expect(function (res) {
         assert.deepEqual(res.body, jsonFile);
       })
       .end(done);
   });
 
-  it('returns 404 for missing file', function(done) {
-    this.s3.use(function(req, res, next) {
+  it('returns 404 for missing file', function (done) {
+    this.s3.use(function (req, res, next) {
       debug('return 404 error');
       sendS3Error(res, 404, 'NoSuchKey');
     });
@@ -120,10 +120,10 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('returns 304 for matching etag', function(done) {
+  it('returns 304 for matching etag', function (done) {
     var etag = Date.now().toString();
 
-    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function (req, res, next) {
       if (req.headers['if-none-match'] === etag) {
         return sendS3Error(res, 412, 'PreconditionFailed');
       }
@@ -138,8 +138,8 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('returns 304 for S3 error NotModified', function(done) {
-    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+  it('returns 304 for S3 error NotModified', function (done) {
+    this.s3.get('/' + BUCKET_NAME + '/' + this.key, function (req, res, next) {
       return sendS3Error(res, 304, 'NotModified');
     });
 
@@ -149,9 +149,9 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('sets content-type header based on file path', function(done) {
+  it('sets content-type header based on file path', function (done) {
     var key = urljoin('subfolder', 'data.csv');
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       res.set('content-type', 'application/octet-stream');
       res.end('some text');
     });
@@ -163,9 +163,9 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('streams an image', function(done) {
+  it('streams an image', function (done) {
     var key = urljoin('images', 's3.png');
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       res.set('content-type', 'image/png');
       res.sendFile(path.join(__dirname, './fixtures/s3.png'));
     });
@@ -177,15 +177,15 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  describe('cacheControl', function() {
-    beforeEach(function() {
+  describe('cacheControl', function () {
+    beforeEach(function () {
       self = this;
 
       this.s3CacheControl = null;
       this.etag = null;
 
       this.key = urljoin('images', 's3.png');
-      this.s3.get('/' + BUCKET_NAME + '/' + this.key, function(req, res, next) {
+      this.s3.get('/' + BUCKET_NAME + '/' + this.key, function (req, res, next) {
         res.set('content-type', 'image/png');
         if (self.s3CacheControl) {
           res.set('cache-control', self.s3CacheControl);
@@ -200,7 +200,7 @@ describe('s3-proxy', function() {
       });
     });
 
-    it('overrides cache-control', function(done) {
+    it('overrides cache-control', function (done) {
       this.s3CacheControl = 'nocache';
       this.pluginOptions.overrideCacheControl = 'max-age=10000';
 
@@ -211,7 +211,7 @@ describe('s3-proxy', function() {
         .end(done);
     });
 
-    it('uses default cache control option if no cache-control from S3', function(done) {
+    it('uses default cache control option if no cache-control from S3', function (done) {
       this.pluginOptions.defaultCacheControl = 'max-age=1000';
 
       supertest(self.app)
@@ -221,7 +221,7 @@ describe('s3-proxy', function() {
         .end(done);
     });
 
-    it('uses S3 cache-control rather than defaultCacheControl option', function(done) {
+    it('uses S3 cache-control rather than defaultCacheControl option', function (done) {
       this.s3CacheControl = 'private, max-age=0';
       this.pluginOptions.defaultCacheControl = 'max-age=1000';
 
@@ -233,22 +233,22 @@ describe('s3-proxy', function() {
     });
   });
 
-  describe('lists keys', function() {
-    beforeEach(function() {
+  describe('lists keys', function () {
+    beforeEach(function () {
       self = this;
       this.s3Keys = ['file1.txt', 'file2.xml', 'file3.json'];
 
-      this.s3.get('/' + BUCKET_NAME, function(req, res, next) {
+      this.s3.get('/' + BUCKET_NAME, function (req, res, next) {
         var actualKeys;
         if (req.query.prefix) {
-          actualKeys = [req.query.prefix].concat(map(self.s3Keys, function(key) {
+          actualKeys = [req.query.prefix].concat(map(self.s3Keys, function (key) {
             return urljoin(req.query.prefix, key);
           }));
         } else {
           actualKeys = self.s3Keys;
         }
 
-        var contentsXml = map(actualKeys, function(key) {
+        var contentsXml = map(actualKeys, function (key) {
           return '<Contents><Key>' + key + '</Key></Contents>';
         });
 
@@ -259,18 +259,18 @@ describe('s3-proxy', function() {
       });
     });
 
-    it('without prefix', function(done) {
+    it('without prefix', function (done) {
       supertest(self.app)
         .get('/s3-proxy/metadata/')
         .expect(200)
         .expect('content-type', 'application/json; charset=utf-8')
-        .expect(function(res) {
+        .expect(function (res) {
           assert.deepEqual(res.body, self.s3Keys);
         })
         .end(done);
     });
 
-    it('with prefix', function(done) {
+    it('with prefix', function (done) {
       var prefix = 'folder-name';
 
       this.pluginOptions = assign({}, S3_OPTIONS, {
@@ -281,16 +281,16 @@ describe('s3-proxy', function() {
         .get('/s3-proxy/metadata/')
         .expect(200)
         .expect('content-type', 'application/json; charset=utf-8')
-        .expect(function(res) {
+        .expect(function (res) {
           assert.deepEqual(res.body, self.s3Keys);
         })
         .end(done);
     });
   });
 
-  it('strips out path segments starting with a double dash', function(done) {
+  it('strips out path segments starting with a double dash', function (done) {
     var key = urljoin('images', 'screenshot.png');
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       res.set('content-type', 'image/png');
       res.sendFile(path.join(__dirname, './fixtures/s3.png'));
     });
@@ -301,9 +301,9 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('strips off querystring', function(done) {
+  it('strips off querystring', function (done) {
     var key = urljoin('images', 'screenshot.png');
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       if (!isEmpty(req.query)) {
         return sendS3Error(res, 400, 'invalidQuerystring');
       }
@@ -318,9 +318,9 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('handles folders and files with spaces', function(done) {
+  it('handles folders and files with spaces', function (done) {
     var key = urljoin(encodeURIComponent('sample pdfs'), encodeURIComponent('pdf sample.pdf'));
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       res.set('content-type', 'application/pdf');
       res.sendFile(path.join(__dirname, './fixtures/pdf sample.pdf'));
     });
@@ -331,12 +331,12 @@ describe('s3-proxy', function() {
       .end(done);
   });
 
-  it('base64 encodes response', function(done) {
+  it('base64 encodes response', function (done) {
     var key = urljoin('files', 'hello.pdf');
     var etag = shortid.generate();
     var pdfFile = path.join(__dirname, './fixtures/pdf sample.pdf');
 
-    this.s3.get('/' + BUCKET_NAME + '/' + key, function(req, res, next) {
+    this.s3.get('/' + BUCKET_NAME + '/' + key, function (req, res, next) {
       res.set('content-type', 'application/pdf');
       res.set('etag', '"' + etag + '"');
       res.set('Content-Length', 1000);
@@ -349,12 +349,53 @@ describe('s3-proxy', function() {
       .expect(200)
       .expect('Content-Encoding', 'base64')
       .expect('ETag', '"' + etag + '_base64"')
-      .expect(function(res) {
+      .expect(function (res) {
         assert.isUndefined(res.headers['content-length']);
         assert.equal(res.text, fs.readFileSync(pdfFile).toString('base64'));
       })
       .end(done);
   });
+
+  it('delegates range header', function (done) {
+    var prefix = 'datadumps';
+    var etag = 'asdfasdfasdf';
+    var key = urljoin('subfolder', 'data.json');
+
+    this.pluginOptions = assign({}, S3_OPTIONS, {
+      prefix: prefix
+    });
+
+    this.s3.get('/' + BUCKET_NAME + '/' + prefix + '/' + key, function (req, res, next) {
+      res.set('content-type', 'text/plain');
+      res.set('etag', '"' + etag + '"');
+      if (req.headers['range'] === 'bytes=1-') {
+        res.end('SDF');
+      } else {
+        res.end('ASDF');
+      }
+    });
+
+    supertest(self.app)
+      .get(urljoin('/s3-proxy', key))
+      .expect(200)
+      .expect('content-type', 'text/plain; charset=utf-8')
+      .expect('x-4front-s3-proxy-key', prefix + '/' + key)
+      .expect('etag', '"' + etag + '"')
+      .expect(function (res) {
+        assert.deepEqual(res.text, "ASDF");
+      })
+      .get(urljoin('/s3-proxy', key))
+      .set('range', 'bytes=1-')
+      .expect(200)
+      .expect('content-type', 'text/plain; charset=utf-8')
+      .expect('x-4front-s3-proxy-key', prefix + '/' + key)
+      .expect('etag', '"' + etag + '"')
+      .expect(function (res) {
+        assert.deepEqual(res.text, "SDF");
+      })
+      .end(done);
+  });
+
 });
 
 function sendS3Error(res, status, code) {
