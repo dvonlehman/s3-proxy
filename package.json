@@ -27,7 +27,7 @@
   "license": "Apache-2.0",
   "homepage": "https://github.com/dvonlehman/s3-proxy",
   "dependencies": {
-    "async": "^2.0.0-rc.3",
+    "async": "^3.2.2",
     "aws-config": "^1.0.7",
     "aws-sdk": "^2.3.3",
     "base64-stream": "^0.1.3",
