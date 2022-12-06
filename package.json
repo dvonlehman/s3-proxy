@@ -50,6 +50,6 @@
     "mocha": "^2.4.5",
     "shortid": "^2.2.6",
     "sinon": "^1.17.3",
-    "supertest": "^1.2.0"
+    "supertest": "^6.3.2"
   }
 }
